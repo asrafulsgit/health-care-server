@@ -24,7 +24,7 @@ router.get(
 // getting doctors (all)[admin]
 router.get(
   "/all",
-  authentication(UserRole.DOCTOR),
+  authentication(UserRole.ADMIN),
   validateRequest(doctorValidators.getDoctorsQueryValidation),
   doctorControllers.getDoctorsAdminController,
 );

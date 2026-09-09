@@ -140,7 +140,7 @@ const myAppointmentsService = async (
       email: user.email,
     };
   }
- 
+
   if (query.searchTerm) {
     const searchTerm = query.searchTerm;
 
@@ -252,6 +252,30 @@ const getAppointmentsService = async (query: Record<string, any>) => {
     .pagination()
     .build();
 
+  if (query.searchTerm) {
+    const searchTerm = query.searchTerm;
+
+    const relationField = "patient";
+
+    where.AND = [
+      ...(where.AND || []),
+      {
+        OR: [
+          {
+            [relationField]: {
+              name: { contains: searchTerm, mode: "insensitive" },
+            },
+          },
+          {
+            [relationField]: {
+              email: { contains: searchTerm, mode: "insensitive" },
+            },
+          },
+        ],
+      },
+    ];
+  }
+
   if (startDate || endDate) {
     where.schedule = where.schedule || {};
     where.schedule.startDateTime = {};
@@ -266,6 +290,7 @@ const getAppointmentsService = async (query: Record<string, any>) => {
       where.schedule.startDateTime.lte = end;
     }
   }
+
   const appointments = await prisma.appointment.findMany({
     where: {
       ...where,

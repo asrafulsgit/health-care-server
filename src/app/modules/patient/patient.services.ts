@@ -73,22 +73,67 @@ const getPatientHealthProfileService = async (user: JwtPayload) => {
 };
 
 const getPatientService = async (id: string) => {
-  const result = await prisma.patient.findUniqueOrThrow({
-    where: {
-      id,
+  const patientInclude = {
+    prescriptions: {
+      include: {
+        doctor: {
+          select: {
+            name: true,
+          },
+        },
+        medications: true,
+      },
     },
-    include: {
-      medicalReport: true,
-      patientHealthData: true,
+    medicalReport: true,
+    patientHealthData: true,
+    appointments: {
+      where: { status: AppointmentStatus.COMPLETED },
+      orderBy: { schedule: { startDateTime: Prisma.SortOrder.desc } },
+      take: 1,
+      select: {
+        doctor: {
+          select: {
+            name: true,
+            doctorSpecialities: {
+              select: {
+                specialities: {
+                  select: {
+                    title: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        schedule: {
+          select: { startDateTime: true },
+        },
+      },
     },
-  });
-  if (result.isDeleted) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "This account is temporarily deleted",
-    );
-  }
-  return result;
+    _count: {
+      select: {
+        appointments: {
+          where: { status: AppointmentStatus.COMPLETED },
+        },
+      },
+    },
+  };
+
+  const patient = (await prisma.patient.findFirstOrThrow({
+    where: { id },
+    include: patientInclude,
+  })) as Prisma.PatientGetPayload<{ include: typeof patientInclude }>;
+
+  const { appointments, _count, ...rest } = patient;
+
+  const data = {
+    ...rest,
+    lastVisit: appointments[0]?.schedule?.startDateTime ?? null,
+    totalVisits: _count.appointments,
+    lastConsultant: appointments[0].doctor,
+  };
+
+  return data;
 };
 
 const updatePatientService = async (

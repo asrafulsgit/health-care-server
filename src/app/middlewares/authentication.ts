@@ -10,7 +10,7 @@ import { UserStatus } from "@prisma/client";
 export const authentication =
   (...roles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
-    try { 
+    try {
       const token = req.cookies.accessToken || req.headers.authorization;
 
       if (!token) {

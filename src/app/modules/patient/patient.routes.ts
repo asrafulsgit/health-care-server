@@ -23,7 +23,7 @@ router.get(
 router.get(
   "/:id",
   validateRequest(patientValidators.paramValidation),
-  authentication(UserRole.DOCTOR, UserRole.ADMIN),
+  authentication(UserRole.ADMIN),
   patientControllers.getPatientController,
 );
 
@@ -40,7 +40,5 @@ router.delete(
   authentication(UserRole.ADMIN),
   patientControllers.deletePatientController,
 );
-
-
 
 export const patientRouter = router;
