@@ -66,11 +66,15 @@ const updatePatientController = catchAsync(
 const deletePatientController = catchAsync(
   async (req: Request, res: Response) => {
     const patientId = req.params.id as string;
-    const patient = await patientServices.deletePatientService(patientId);
+    const isDelete = req.body.isDelete as boolean;
+    const patient = await patientServices.deletePatientService(
+      patientId,
+      isDelete,
+    );
     sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Patient deleted successfully",
+      message: `Patient ${isDelete ? "deleted" : "restored"} successfully`,
       data: patient,
     });
   },

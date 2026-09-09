@@ -1,4 +1,4 @@
-import { Patient, Prisma, UserStatus } from "@prisma/client";
+import { AppointmentStatus, Patient, Prisma, UserStatus } from "@prisma/client";
 import { prisma } from "../../shared/prisma";
 import QueryBuilder from "../../utils/queryBuilder";
 import { IPatientUpdate } from "./patient.interface";
@@ -19,12 +19,27 @@ const getPatientsService = async (query: Record<string, any>) => {
   const patients = await prisma.patient.findMany({
     where: {
       ...queryBuilder.where,
-      isDeleted: false,
     },
     ...queryBuilder.options,
     include: {
       patientHealthData: true,
-      medicalReport: true,
+      appointments: {
+        where: { status: AppointmentStatus.COMPLETED },
+        orderBy: { schedule: { startDateTime: Prisma.SortOrder.desc } },
+        take: 1,
+        select: {
+          schedule: {
+            select: { startDateTime: true },
+          },
+        },
+      },
+      _count: {
+        select: {
+          appointments: {
+            where: { status: AppointmentStatus.COMPLETED },
+          },
+        },
+      },
     },
   });
 
@@ -141,25 +156,45 @@ const updatePatientService = async (
   return responseData;
 };
 
-const deletePatientService = async (id: string) => {
+const deletePatientService = async (id: string, isDelete: boolean) => {
+  const patientInfo = await prisma.patient.findUniqueOrThrow({
+    where: {
+      id,
+    },
+  });
+
+  if (patientInfo.isDeleted && isDelete) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This patient is already deleted",
+    );
+  }
+
+  if (!patientInfo.isDeleted && !isDelete) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This patient is already active",
+    );
+  }
+
   return await prisma.$transaction(async (tnx) => {
-    const deletedPatient = await tnx.patient.update({
+    const updatedPatient = await tnx.patient.update({
       where: { id },
       data: {
-        isDeleted: true,
+        isDeleted: isDelete,
       },
     });
 
     await tnx.user.update({
       where: {
-        email: deletedPatient.email,
+        email: updatedPatient.email,
       },
       data: {
-        status: UserStatus.DELETED,
+        status: isDelete ? UserStatus.DELETED : UserStatus.ACTIVE,
       },
     });
 
-    return deletedPatient;
+    return updatedPatient;
   });
 };
 

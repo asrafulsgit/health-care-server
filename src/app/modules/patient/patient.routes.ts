@@ -36,7 +36,7 @@ router.patch(
 
 router.delete(
   "/:id",
-  validateRequest(patientValidators.paramValidation),
+  validateRequest(patientValidators.deletePatientValidation),
   authentication(UserRole.ADMIN),
   patientControllers.deletePatientController,
 );

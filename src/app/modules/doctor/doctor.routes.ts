@@ -14,7 +14,7 @@ router.get(
   doctorControllers.getMyDoctorsController,
 );
 
-// getting doctors (all)
+// getting doctors (all)[public]
 router.get(
   "/",
   validateRequest(doctorValidators.getDoctorsQueryValidation),
@@ -23,7 +23,8 @@ router.get(
 
 // getting doctors (all)[admin]
 router.get(
-  "/admin",
+  "/all",
+  authentication(UserRole.DOCTOR),
   validateRequest(doctorValidators.getDoctorsQueryValidation),
   doctorControllers.getDoctorsAdminController,
 );
@@ -38,8 +39,8 @@ router.get(
 // getting single patient record (doctor)
 router.get(
   "/patient-records/:id",
-  validateRequest(doctorValidators.paramValidation),
   authentication(UserRole.DOCTOR),
+  validateRequest(doctorValidators.paramValidation),
   doctorControllers.getPatientRecordController,
 );
 
@@ -54,8 +55,8 @@ router.get(
 // getting single doctor data 
 router.get(
   "/:id",
-  validateRequest(doctorValidators.paramValidation),
   authentication(UserRole.PATIENT,UserRole.DOCTOR,UserRole.ADMIN),
+  validateRequest(doctorValidators.paramValidation),
   doctorControllers.getDoctorController,
 );
 
