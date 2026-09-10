@@ -21,7 +21,7 @@ router.get(
 // get doctor schedules
 router.get(
     '/:id',
-    authentication(UserRole.DOCTOR,UserRole.PATIENT,UserRole.ADMIN),
+    authentication(UserRole.PATIENT,UserRole.ADMIN),
     doctorScheduleControllers.getDoctorSchedulesController
 )
 

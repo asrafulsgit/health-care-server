@@ -51,8 +51,16 @@ const getDoctorAvailableSchedulesService = async (
   email: string,
   query: Record<string, any>,
 ) => {
-  const { startDate, endDate, page, limit = 30 } = query;
-  const queryBuilder = new QueryBuilder({ ...query, limit, sortOrder: "asc" })
+  const {
+    startDate,
+    endDate,
+    sortBy = "startDateTime",
+    sortOrder = "asc",
+    page,
+    limit = 30,
+  } = query;
+  const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
+  const queryBuilder = new QueryBuilder({ ...query, limit, sortBy, sortOrder })
     .sort()
     .pagination()
     .build();
@@ -74,7 +82,7 @@ const getDoctorAvailableSchedulesService = async (
 
   if (!startDate) {
     where.startDateTime = {
-      gte: new Date(),
+      gte: twoHoursFromNow,
     };
   }
 
@@ -85,7 +93,7 @@ const getDoctorAvailableSchedulesService = async (
       },
       schedule: {
         startDateTime: {
-          gte: new Date(),
+          gte: twoHoursFromNow,
         },
       },
     },
@@ -131,9 +139,9 @@ const getDoctorScheduledSchedulesService = async (
   email: string,
   query: Record<string, any>,
 ) => {
-  const { startDate, endDate, page, limit = 30, sortedBy, sortOrder } = query;
+  const { startDate, endDate, page, limit = 30, sortBy = "startDateTime",
+    sortOrder = "asc", } = query;
 
-   
   const where: any = {
     doctor: { email },
   };
@@ -153,11 +161,10 @@ const getDoctorScheduledSchedulesService = async (
       where.schedule.startDateTime.lte = end;
     }
   }
-
-  const orderBy = sortedBy
+  const orderBy = sortBy
     ? {
         schedule: {
-          [sortedBy]: (sortOrder === "desc"
+          [sortBy]: (sortOrder === "desc"
             ? "desc"
             : "asc") as Prisma.SortOrder,
         },
@@ -205,6 +212,7 @@ const getDoctorSchedulesService = async (
   query: Record<string, any>,
 ) => {
   const { startDate, endDate, page, limit } = query;
+  const twoHoursFromNow = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
   const queryBuilder = new QueryBuilder(query)
     .filter()
@@ -227,6 +235,12 @@ const getDoctorSchedulesService = async (
       end.setHours(23, 59, 59, 999);
       where.schedule.startDateTime.lte = end;
     }
+  }
+
+  if (!startDate) {
+    where.schedule = where.schedule || {};
+    where.schedule.startDateTime = {};
+    where.schedule.startDateTime.gte = twoHoursFromNow;
   }
 
   const doctorData = await prisma.doctor.findUniqueOrThrow({

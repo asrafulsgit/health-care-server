@@ -15,7 +15,7 @@ router.post(
 );
 router.get(
   "/",
-  authentication(UserRole.ADMIN,UserRole.DOCTOR),
+  authentication(UserRole.ADMIN),
   scheduleControllers.getSchedulesController
 );
 
